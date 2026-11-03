@@ -1,0 +1,91 @@
+# Horizon backward compatibility: join servers on older Minecraft versions.
+#
+# Versions Horizon translates itself (26.2) go through a ViaVersion-style chain in Rust; every
+# other version (Classic to 26.1) goes through a local ViaProxy that the mod starts on demand.
+[mod]
+id = "backcompat"
+version = "0.1.0"
+priority = 0
+
+[compatibility]
+horizon_revision = "31f83499b6c2cff7a8e7bf45f8173a7a95c2767c"
+
+# The engine: protocol chain, state tracking, routing, ViaProxy supervision. No Horizon types.
+[[crate]]
+id = "engine"
+path = "engine"
+dependent = "horizon-protocol"
+
+# Connection side: the pipeline registry and the send/receive hooks' bodies.
+[[module]]
+id = "protocol-glue"
+file = "crates/horizon-protocol/src/connection.rs"
+name = "backcompat"
+source = "protocol_glue.rs"
+visibility = "pub"
+
+# Client side: version detection, routing, the account for ViaProxy's session joins.
+[[module]]
+id = "client-glue"
+file = "crates/horizon-client/src/net.rs"
+name = "backcompat"
+source = "client_glue.rs"
+
+[[injection]]
+id = "send"
+target = "horizon_protocol::connection::ConnWriter::send"
+kind = "HEAD"
+cancellable = true
+helper = "send.rs"
+bindings = [
+  { name = "writer", ty = "&mut ConnWriter", value = "&mut *self" },
+  { name = "body", ty = "&[u8]", value = "body" },
+]
+
+[[injection]]
+id = "recv"
+target = "horizon_protocol::connection::ConnReader::recv"
+kind = "HEAD"
+cancellable = true
+helper = "recv.rs"
+bindings = [{ name = "reader", ty = "&mut ConnReader", value = "&mut *self" }]
+
+[[injection]]
+id = "connect"
+target = "horizon_client_lib::net::connect_tcp"
+kind = "HEAD"
+cancellable = true
+helper = "connect.rs"
+bindings = [
+  { name = "host", ty = "&str", value = "host" },
+  { name = "port", ty = "u16", value = "port" },
+  { name = "relayed", ty = "bool", value = "relayed" },
+  { name = "read_timeout", ty = "std::time::Duration", value = "read_timeout" },
+]
+
+[[injection]]
+id = "account"
+target = "horizon_client_lib::net::Session::start"
+kind = "HEAD"
+helper = "start.rs"
+bindings = [{ name = "auth", ty = "&Option<std::sync::Arc<crate::auth::AuthSession>>", value = "&auth" }]
+
+# Not protocol translation, a Horizon movement fix that anti-bot lobbies need: vanilla's
+# LocalPlayer.aiStep forces a spectator's flight only inside `if (abilities.mayfly)`. Horizon
+# forces it for every spectator, so a spectator the server denies flight (abilities flags 0, the
+# gravity check of limbo anti-bots such as kokscraft.pl's) hovers instead of falling and is kicked.
+# The tick's body has `?`, which expression mixins refuse, so two HEADs: the tick notes a
+# spectator who neither flies nor may fly, and the travel it runs (dry_tick) undoes the forcing.
+[[injection]]
+id = "spectator-flight-note"
+target = "horizon_client_lib::motion::MotionWorld<'_,'_,'_>::player_movement_tick_with_fluids"
+kind = "HEAD"
+helper = "spectator_note.rs"
+bindings = [{ name = "world", ty = "&mut MotionWorld<'_, '_, '_>", value = "&mut *self" }]
+
+[[injection]]
+id = "spectator-flight-travel"
+target = "horizon_client_lib::motion::MotionWorld<'_,'_,'_>::dry_tick"
+kind = "HEAD"
+helper = "spectator_travel.rs"
+bindings = [{ name = "world", ty = "&mut MotionWorld<'_, '_, '_>", value = "&mut *self" }]

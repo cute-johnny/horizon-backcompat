@@ -1,0 +1,10 @@
+[package]
+name = "horizon-backcompat-engine"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Join older Minecraft servers from Horizon: a ViaVersion-style translation chain and a ViaProxy bridge"
+
+[dependencies]
+# Already in Horizon's Cargo.lock (horizon-protocol uses it): the config file.
+serde_json = "1"

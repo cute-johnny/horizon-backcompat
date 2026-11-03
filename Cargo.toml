@@ -1,0 +1,5 @@
+# Standalone workspace for testing the engine crate outside Horizon. horizon-mixins stages
+# mixins/backcompat/engine into Horizon's own workspace as a bundle crate.
+[workspace]
+members = ["mixins/backcompat/engine"]
+resolver = "2"

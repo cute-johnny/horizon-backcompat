@@ -1,0 +1,4 @@
+name: HorizonAuthBridge
+version: 0.1.0
+author: Horizon backward compatibility
+main: dev.horizonbackcompat.viaproxy.HorizonAuthBridge
