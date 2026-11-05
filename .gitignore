@@ -3,6 +3,3 @@
 /stage/
 /dist/out/
 __pycache__/
-# Local agent tooling, not published
-/.hermes/
-/AGENTS.md
