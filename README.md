@@ -1,3 +1,7 @@
+#ARCHIVED
+
+It was made for old version of horizon only to make me be able to join older servers and play once on server.
+
 # Horizon backward compatibility
 
 A native mod for [Horizon](https://github.com/horizon-rust/horizon) (the Rust rewrite of Minecraft:
